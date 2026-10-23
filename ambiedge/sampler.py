@@ -12,6 +12,8 @@ TARGET_WIDTH = 480
 
 CAPTURE_METHODS = ("auto", "dxcam", "mss")
 
+VIVID_GAIN = 30.0
+
 
 class Capture:
     """Grabs full frames as BGRA numpy arrays.
@@ -83,24 +85,39 @@ def _content_bounds(img, threshold=18, max_frac=0.25):
     return top, bottom, left, right
 
 
-def _segment_means(band, n, axis):
+def _segment_means(band, n, axis, weights=None):
     """Split band into n segments along axis and return (n, 3) mean colors.
 
-    Works even when n is larger than the band (segments then share pixels).
+    With weights (one per pixel), returns weighted means. Works even when n is larger than the
+    band (segments then share pixels).
     """
     if n <= 0:
         return np.zeros((0, 3), np.float32)
     length = band.shape[axis]
     other = 1 - axis
-    line = band.sum(axis=other)  # (length, 3)
+    if weights is None:
+        line = band.sum(axis=other)  # (length, 3)
+        wline = np.full(length, band.shape[other], np.float32)
+    else:
+        line = (band * weights[..., None]).sum(axis=other)
+        wline = weights.sum(axis=other)
     cs = np.concatenate([np.zeros((1, 3), line.dtype), np.cumsum(line, axis=0)])
+    ws = np.concatenate([[0.0], np.cumsum(wline)])
     starts = np.minimum((np.arange(n) * length) // n, length - 1)
     ends = np.maximum((np.arange(1, n + 1) * length) // n, starts + 1)
-    counts = (ends - starts) * band.shape[other]
-    return (cs[ends] - cs[starts]) / counts[:, None]
+    return (cs[ends] - cs[starts]) / (ws[ends] - ws[starts])[:, None]
 
 
-def sample_edges(frame, layout, depth=0.12, skip_black_bars=True):
+def color_weights(img, vivid):
+    """Per-pixel weights that favor saturated pixels, so a red logo on gray stays red.
+
+    vivid 0 gives a plain average; 1 counts fully saturated pixels about 30x more than gray ones.
+    """
+    chroma = (img.max(axis=2) - img.min(axis=2)) * np.float32(1 / 255)
+    return 1 + np.float32(VIVID_GAIN * vivid) * chroma * chroma
+
+
+def sample_edges(frame, layout, depth=0.12, skip_black_bars=True, vivid=0.0):
     """Average colors along the screen edges for a Layout.
 
     Returns (left, top, right, bottom) float arrays of RGB, ordered top->bottom for the sides
@@ -114,10 +131,15 @@ def sample_edges(frame, layout, depth=0.12, skip_black_bars=True):
         img = img[t:b, l:r]
     sh, sw = img.shape[:2]
     d = max(1, int(min(sh, sw) * depth))
-    left = _segment_means(img[:, :d], layout.left, axis=0)
-    top = _segment_means(img[:d, :], layout.top, axis=1)
-    right = _segment_means(img[:, sw - d:], layout.right, axis=0)
-    bottom = _segment_means(img[sh - d:, :], layout.bottom + layout.bottom_gap, axis=1)
+
+    def mean(ys, xs, n, axis):
+        band = img[ys, xs]
+        return _segment_means(band, n, axis, color_weights(band, vivid) if vivid > 0 and n else None)
+
+    left = mean(slice(None), slice(0, d), layout.left, 0)
+    top = mean(slice(0, d), slice(None), layout.top, 1)
+    right = mean(slice(None), slice(sw - d, sw), layout.right, 0)
+    bottom = mean(slice(sh - d, sh), slice(None), layout.bottom + layout.bottom_gap, 1)
     if layout.bottom_gap:
         # Drop the samples in the gap (e.g. where a monitor stand is) between the two halves.
         left_part, right_part = layout.bottom_split()

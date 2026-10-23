@@ -8,6 +8,18 @@ USB, serial (Arduino / ESP), Wi-Fi (WLED) and anything OpenRGB can drive.
 
 It's **free**, made as a hobby project, and **not for profit**. See [License](#license).
 
+**Features**
+
+- Screen sync with smoothing, black-bar detection and a "vivid colors" mode that keeps small
+  saturated details (a red logo on gray) from turning muddy.
+- **Profiles** (Desktop, Movie, Game, or your own) that switch automatically by the app in front.
+- **Mood light**: a plain color, slow breathing, color cycle or rainbow when you're not syncing.
+- Lights **fade out when the display sleeps, the PC locks or goes to sleep**, and come back by
+  themselves. An optional **daily schedule** keeps them off outside the hours you choose.
+- A **tray icon** with on/off, mood light, brightness and profile controls.
+- A live preview of the layout, a test pattern for checking it, and **Fit to LED count** to split
+  a strip over the screen edges automatically.
+
 > [!CAUTION]
 > **Use at your own risk.** AmbiEdge is provided "as is", without warranty of any kind. The
 > authors aren't responsible for damage to your LED strip, controller, power supply, USB port,
@@ -24,6 +36,7 @@ It's **free**, made as a hobby project, and **not for profit**. See [License](#l
 - [Install](#install)
 - [First-time setup](#first-time-setup)
 - [Settings](#settings)
+- [Tray icon](#tray-icon)
 - [Safety](#safety)
 - [Things worth knowing](#things-worth-knowing)
 - [Troubleshooting](#troubleshooting)
@@ -118,14 +131,16 @@ python -m venv .venv
    - WLED: enter the device's IP address (shown in the WLED app).
    - OpenRGB: start OpenRGB, open its **SDK Server** tab, click **Start Server**, then pick the device number.
 3. **Layout tab:** enter how many LEDs are on each edge, as seen from the **front** of the
-   screen, plus the corner LED 1 sits at and which way the strip runs.
+   screen, plus the corner LED 1 sits at and which way the strip runs. Or click **Fit to LED
+   count...**: enter the strip's total (pre-filled when the controller reports it) and AmbiEdge
+   splits it over the edges to match the screen's shape. Fine-tune after testing.
 4. Click **Test layout**. Left should be **red**, top **green**, right **blue** and bottom
    **yellow**. The first LED of each edge (going clockwise) is white and **LED 1 blinks**.
    - Colors change before or after the corners: adjust the edge counts.
    - Everything is mirrored: change the direction or the starting corner.
    - LED 1 isn't exactly at a corner: use **Shift start by**.
    - Red shows as green (or similar): change **Color order** (many WS2812B strips are GRB).
-5. Click **Start sync**.
+5. Click **Start sync**, or **Mood light** for a plain color or slow effect.
 
 The preview at the top of the window shows the layout and the live colors, with LED 1 and the
 last LED numbered. Settings save automatically.
@@ -139,15 +154,43 @@ last LED numbered. Settings save automatically.
 - **LED 1 is at / Going**: the corner the strip starts at and the direction it runs, seen from the front.
 - **Shift start by**: moves LED 1 along the strip when it doesn't start exactly at a corner.
 - **Color order**: the order your strip expects red, green and blue in.
+- **Fit to LED count**: fills in the edge counts from the strip's total LED count.
 
-**Look**
+**Look** (saved per profile)
 
+- **Profile**: which profile you're editing.
 - **Brightness**: overall brightness.
 - **Color boost**: increases saturation, since edge averages often look washed out.
+- **Vivid colors**: gives bright, saturated pixels more weight than gray ones when averaging, so
+  small colorful details still show. 0 is a plain average.
 - **Smoothing**: higher fades more slowly and flickers less.
 - **Edge depth**: how far into the screen each LED looks (a fraction of the screen).
 - **Gamma**: values above 1 deepen dim colors; often looks more natural on WS2812 strips.
 - **Ignore black bars**: samples inside letterboxed video instead of the black bars.
+
+**Profiles**
+
+- Each profile has its own Look settings. AmbiEdge comes with **Desktop**, **Movie** (smoother,
+  with common video players already listed) and **Game** (faster).
+- **Use this profile while these apps are in front**: program file names such as `vlc.exe`,
+  separated by commas. **Choose...** lists the programs that have a window open.
+- **Switch profiles automatically by the app in front**: when none of the listed apps is in
+  front, the profile selected on the Look tab is used.
+
+**Mood**
+
+- **Color**, with quick presets, and an **Effect**: solid, breathe (a slow pulse), color cycle or
+  rainbow. All effects change slowly on purpose. **Brightness** is separate from screen sync.
+
+**Schedule**
+
+- **Turn the lights off while the display sleeps, the PC is locked or the PC is asleep**: the
+  lights fade out and come back when you return. On by default. (Windows only.)
+- **Only turn the lights on between ... and ...**: a daily schedule, 24-hour times. An off time
+  earlier than the on time spans midnight (for example 18:00 to 01:00).
+- **When AmbiEdge opens**: do nothing, start screen sync, or turn on the mood light.
+- **Start AmbiEdge when I sign in to Windows**: it starts hidden in the tray.
+- **Closing the window keeps AmbiEdge running in the tray**: on by default.
 
 **Advanced**
 
@@ -157,7 +200,18 @@ last LED numbered. Settings save automatically.
 - **LEDs per zone**: values above 1 average neighboring LEDs into larger zones.
 - **Max power**: limits R+G+B per LED (0 to 765). See [Safety](#safety).
 - **White balance**: scales red, green and blue if white looks tinted.
-- **Start syncing when the app opens** and **Start AmbiEdge when I sign in to Windows**.
+
+## Tray icon
+
+On Windows, AmbiEdge puts an icon in the notification area (next to the clock). It's colorful
+while the lights are on and gray while they're off or paused. Hover it to see what it's doing.
+
+- **Click** it to open the window.
+- **Right-click** it for **Screen sync**, **Mood light**, **Off**, **Brightness** (sets the
+  brightness of the profile in use, or of the mood light), **Profile**, and **Quit**.
+
+Closing the window hides it to the tray; use **Quit** in the tray menu to exit. If you can't see
+the icon, click the arrow next to the clock, and drag the icon out to keep it visible.
 
 ## Safety
 
@@ -188,8 +242,11 @@ last LED numbered. Settings save automatically.
   can't be captured.
 - **The taskbar** sits on the bottom edge when you're not in fullscreen, so bottom LEDs show
   its color.
-- **Lock screen, UAC prompts and resolution changes** pause capture briefly; AmbiEdge resumes
-  by itself.
+- **Lock screen, display sleep and PC sleep** turn the lights off (fading over a second) and
+  back on when you return, unless you untick that option on the Schedule tab. UAC prompts and
+  resolution changes pause capture briefly; AmbiEdge resumes by itself.
+- **WLED and paused lights:** while paused, AmbiEdge keeps sending "off" so WLED doesn't switch
+  back to its own effect. Quitting AmbiEdge hands the strip back to WLED.
 - **Unplugging the controller** is fine: AmbiEdge keeps retrying and reconnects when it's back.
 - **Only one copy runs at a time**, so two copies can't fight over the lights.
 - **Serial speed limits FPS:** 115200 baud carries about 120 LEDs at 30 fps. For longer strips,
@@ -207,7 +264,9 @@ last LED numbered. Settings save automatically.
 
 The code avoids Windows-only parts where it can: capture falls back to `mss`, and the drivers
 are cross-platform. On Linux, mss needs an X11 session (Wayland isn't supported), and USB
-devices may need a udev rule for access. Reports from people who try it are welcome.
+devices may need a udev rule for access. The tray icon, automatic profile switching and
+turning off with the display are Windows-only for now; the schedule works everywhere. Reports
+from people who try it are welcome.
 
 ## Troubleshooting
 
@@ -222,7 +281,10 @@ devices may need a udev rule for access. Reports from people who try it are welc
 | Colors shifted around the screen | Recheck the edge counts, the starting corner and the direction with Test layout. |
 | Wrong screen | Change Monitor #. |
 | LEDs flicker | Raise Smoothing. Check the strip's power supply and data wiring. |
-| Some LEDs stay off at the end | The layout has fewer LEDs than the strip. The status line says how many the device reports, when it can tell. |
+| Some LEDs stay off at the end | The layout has fewer LEDs than the strip. The status line says how many the device reports, when it can tell. Try Fit to LED count. |
+| Lights turn off by themselves | The display went to sleep, the PC locked, or it's outside the schedule. The status line says which. Change it on the Schedule tab. |
+| Wrong profile is used | Check the Profiles tab: "In use now" shows which profile is active and why. |
+| No tray icon | Click the arrow next to the clock. Windows may hide new icons there. |
 
 If something else goes wrong, open an [issue](https://github.com/KorbSoft/AmbiEdge/issues) with
 your controller model and the contents of `%APPDATA%\AmbiEdge\ambiedge.log` (run with `--debug`
@@ -232,8 +294,9 @@ for more detail).
 
 ```text
 ambiedge                 open the window
-ambiedge --minimized     open the window minimized
+ambiedge --minimized     start hidden in the tray
 ambiedge --headless      sync with the saved settings, no window (Ctrl+C stops)
+ambiedge --headless --mood
 ambiedge --headless --test-pattern
 ambiedge --list-devices  list detected controllers
 ambiedge --config PATH   use a different settings file

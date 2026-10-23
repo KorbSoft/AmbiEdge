@@ -18,7 +18,8 @@ jobs:
           python-version: "3.12"
       - run: python -m pip install . pyinstaller pytest
       - run: python -m pytest -q
-      - run: pyinstaller --noconfirm --onefile --windowed --name AmbiEdge AmbiEdge.pyw
+      - run: python -m ambiedge.icon AmbiEdge.ico
+      - run: pyinstaller --noconfirm --onefile --windowed --name AmbiEdge --icon AmbiEdge.ico AmbiEdge.pyw
       - uses: softprops/action-gh-release@v2
         with:
           files: dist/AmbiEdge.exe

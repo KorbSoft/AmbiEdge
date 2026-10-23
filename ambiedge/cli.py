@@ -36,6 +36,7 @@ def _already_running(gui):
 
 def _headless(cfg, mode):
     from .engine import SyncEngine
+    from .system import SystemMonitor
 
     stopped = threading.Event()
 
@@ -45,7 +46,8 @@ def _headless(cfg, mode):
         else:
             print(text, flush=True)
 
-    engine = SyncEngine(lambda: cfg, status)
+    monitor = SystemMonitor().start()  # so the lights still go off with the display
+    engine = SyncEngine(lambda: cfg, status, monitor)
     engine.start(mode)
     try:
         while not stopped.wait(0.5):
@@ -54,15 +56,17 @@ def _headless(cfg, mode):
         pass
     finally:
         engine.stop()
+        monitor.stop()
 
 
 def main(argv=None):
     p = argparse.ArgumentParser(prog="ambiedge", description="Screen-reactive bias lighting for PC LED strips.")
     p.add_argument("--headless", action="store_true", help="sync without a window, using the saved settings (Ctrl+C stops)")
+    p.add_argument("--mood", action="store_true", help="with --headless, show the mood light instead")
     p.add_argument("--test-pattern", action="store_true", help="with --headless, show the layout test pattern instead")
     p.add_argument("--list-devices", action="store_true", help="list detected controllers and exit")
     p.add_argument("--config", metavar="PATH", help="settings file to use instead of the default")
-    p.add_argument("--minimized", action="store_true", help="start with the window minimized")
+    p.add_argument("--minimized", action="store_true", help="start hidden in the tray (or minimized)")
     p.add_argument("--debug", action="store_true", help="verbose logging")
     p.add_argument("--version", action="version", version=f"AmbiEdge {__version__}")
     args = p.parse_args(argv)
@@ -88,7 +92,7 @@ def main(argv=None):
     try:
         cfg = load_config(args.config)
         if args.headless:
-            _headless(cfg, "test" if args.test_pattern else "sync")
+            _headless(cfg, "test" if args.test_pattern else "mood" if args.mood else "sync")
         else:
             from .gui import run
             run(cfg, args.config, args.minimized)

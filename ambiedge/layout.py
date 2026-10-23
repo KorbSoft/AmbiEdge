@@ -86,3 +86,29 @@ def test_pattern(layout, blink_on=True):
     if layout.total:
         loop[layout.order[0]] = 255 if blink_on else 0
     return loop
+
+
+EDGES = ("left", "top", "right", "bottom")
+
+
+def fit_counts(total, width, height, edges=("left", "top", "right")):
+    """Split `total` LEDs over the given edges in proportion to their length on screen.
+
+    Both sides get the same count; any rounding difference goes to the top (or first) edge.
+    Returns a dict with a count for every edge (0 for unused ones).
+    """
+    active = [e for e in EDGES if e in edges] or ["left", "top", "right"]
+    length = {"left": height, "right": height, "top": width, "bottom": width}
+    perimeter = sum(length[e] for e in active)
+    counts = dict.fromkeys(EDGES, 0)
+    sides = [e for e in active if e in ("left", "right")]
+    across = [e for e in active if e in ("top", "bottom")]
+    if sides:
+        side = round(total * height / perimeter) if across else total // len(sides)
+        for e in sides:
+            counts[e] = min(side, total // len(sides))
+    rest = total - sum(counts.values())
+    for e in across:
+        counts[e] = rest // len(across)
+    counts[(across or sides)[0]] += total - sum(counts.values())
+    return counts
