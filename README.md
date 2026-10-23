@@ -1,0 +1,298 @@
+# AmbiEdge
+
+**Screen-reactive bias lighting for LED strips connected to your PC.**
+
+AmbiEdge watches the edges of your screen and lights an LED strip behind your monitor or TV
+with matching colors, the "ambilight" effect. It works with several kinds of controllers:
+USB, serial (Arduino / ESP), Wi-Fi (WLED) and anything OpenRGB can drive.
+
+It's **free**, made as a hobby project, and **not for profit**. See [License](#license).
+
+> [!CAUTION]
+> **Use at your own risk.** AmbiEdge is provided "as is", without warranty of any kind. The
+> authors aren't responsible for damage to your LED strip, controller, power supply, USB port,
+> computer or anything else, or for any other harm that comes from using it. Read
+> [Safety](#safety) before you start.
+
+---
+
+## Contents
+
+- [What you need](#what-you-need)
+- [Supported controllers](#supported-controllers)
+- [Will my strip work?](#will-my-strip-work)
+- [Install](#install)
+- [First-time setup](#first-time-setup)
+- [Settings](#settings)
+- [Safety](#safety)
+- [Things worth knowing](#things-worth-knowing)
+- [Troubleshooting](#troubleshooting)
+- [Command line](#command-line)
+- [Privacy](#privacy)
+- [Adding a controller](#adding-a-controller)
+- [License](#license)
+
+## What you need
+
+- A PC running **Windows 10 or 11**. Linux and macOS may work but aren't tested (see
+  [Other platforms](#other-platforms)).
+- An **addressable** LED strip (WS2812B, SK6812, WS2815 and similar, where each LED can show
+  its own color) with a **controller the PC can talk to**: plugged into the PC over USB, or on
+  your network running WLED, or connected to a motherboard ARGB header that OpenRGB supports.
+
+## Supported controllers
+
+| Controller | How it connects | Notes |
+|---|---|---|
+| **Robobloq SyncLight** | USB (HID, ID `1A86:FE07`) | Replaces Robobloq's SyncLight app for screen sync. Reports its LED count. |
+| **Adalight** devices | USB serial / COM port | Arduino or ESP boards running Adalight-compatible firmware, Prismatik/Lightpack-style DIY builds, and ready-made kits that use the Adalight protocol. |
+| **WLED** | Wi-Fi or Ethernet (UDP) | Any ESP8266/ESP32 running [WLED](https://kno.wled.ge). Reports its LED count. |
+| **OpenRGB** | OpenRGB SDK server (TCP) | Motherboard ARGB headers, RGB controllers and many branded products that [OpenRGB](https://openrgb.org) supports. *Experimental.* |
+| **None (preview only)** | n/a | No hardware. Shows the effect in the window, for trying the app or planning a layout. |
+
+Layouts can be any mix of left, top, right and bottom edges, start at any corner, run either
+direction, and skip a gap for a monitor stand, so most physical setups can be described.
+
+## Will my strip work?
+
+**Probably yes** if:
+
+- Its controller box plugs into the PC with a USB cable *and* the strip's own software does
+  screen sync. Look in **Device Manager**: if the controller appears under **Ports (COM & LPT)**
+  (often as "USB-SERIAL CH340", "CP210x" or "Arduino"), try the **Adalight** driver. If it's a
+  Robobloq kit, use the **Robobloq** driver. **Find devices** in the app lists what it can see.
+- It's an ESP-based controller that runs (or can be flashed with) **WLED**.
+- It's plugged into a motherboard **ARGB header** that OpenRGB can control.
+
+**Probably not** if:
+
+- It's controlled only by a **phone app over Bluetooth or Wi-Fi** (most Govee, "Magic Home",
+  Tuya / Smart Life, Philips Hue, Nanoleaf and similar), unless you replace the controller.
+- It uses an **IR remote** only, or it's a plain 12 V **RGB** strip (4 wires, the whole strip is
+  one color). These aren't addressable, so they can't show different colors per LED.
+- It's a **camera-based** or **HDMI sync box** kit. Those work without a PC and use their own
+  protocols.
+- It's a USB kit whose controller uses its own undocumented protocol. You can
+  [add a driver](#adding-a-controller) if you can work out the protocol.
+
+When in doubt, check that the strip's manufacturer offers PC screen sync software. If they do,
+the controller talks to the PC, and it may be Adalight-compatible.
+
+## Install
+
+### Option A: download the app (easiest)
+
+1. Download `AmbiEdge.exe` from the [Releases page](https://github.com/KorbSoft/AmbiEdge/releases).
+2. Double-click it. No installation needed.
+
+Windows SmartScreen will probably warn that the app is from an "unknown publisher", because the
+file isn't code-signed (signing certificates cost money and this is a free project). Click
+**More info → Run anyway** if you trust the download. Some antivirus programs also flag
+PyInstaller-built apps by mistake. If you'd rather not run a prebuilt file, use option B: the
+source is all here to read.
+
+### Option B: run from source
+
+1. Install **Python 3.9 or newer** from [python.org](https://www.python.org/downloads/). Tick
+   **Add python.exe to PATH** during setup.
+2. Download this repository (**Code → Download ZIP**, then extract it) or `git clone` it.
+3. Double-click **`setup.bat`** once. It creates a `.venv` folder and installs the dependencies.
+4. Double-click **`start.bat`** to run AmbiEdge.
+
+Or by hand:
+
+```bash
+python -m venv .venv
+.venv\Scripts\python -m pip install -r requirements.txt
+.venv\Scripts\python -m ambiedge
+```
+
+`pip install .` also installs `ambiedge` (console) and `ambiedge-gui` (no console) commands.
+
+## First-time setup
+
+1. **Close your strip's own app** (SyncLight, Prismatik, the vendor's sync tool and so on), or
+   the two will fight over the lights.
+2. **Device tab:** pick your controller, or click **Find devices...** and choose from the list.
+   - Adalight: choose the COM port and the baud rate your firmware uses.
+   - WLED: enter the device's IP address (shown in the WLED app).
+   - OpenRGB: start OpenRGB, open its **SDK Server** tab, click **Start Server**, then pick the device number.
+3. **Layout tab:** enter how many LEDs are on each edge, as seen from the **front** of the
+   screen, plus the corner LED 1 sits at and which way the strip runs.
+4. Click **Test layout**. Left should be **red**, top **green**, right **blue** and bottom
+   **yellow**. The first LED of each edge (going clockwise) is white and **LED 1 blinks**.
+   - Colors change before or after the corners: adjust the edge counts.
+   - Everything is mirrored: change the direction or the starting corner.
+   - LED 1 isn't exactly at a corner: use **Shift start by**.
+   - Red shows as green (or similar): change **Color order** (many WS2812B strips are GRB).
+5. Click **Start sync**.
+
+The preview at the top of the window shows the layout and the live colors, with LED 1 and the
+last LED numbered. Settings save automatically.
+
+## Settings
+
+**Layout**
+
+- **Left / Top / Right / Bottom**: LEDs on each edge. Use 0 for edges without LEDs.
+- **Bottom gap**: how many LEDs would fit in a gap in the middle of the bottom edge (for a stand).
+- **LED 1 is at / Going**: the corner the strip starts at and the direction it runs, seen from the front.
+- **Shift start by**: moves LED 1 along the strip when it doesn't start exactly at a corner.
+- **Color order**: the order your strip expects red, green and blue in.
+
+**Look**
+
+- **Brightness**: overall brightness.
+- **Color boost**: increases saturation, since edge averages often look washed out.
+- **Smoothing**: higher fades more slowly and flickers less.
+- **Edge depth**: how far into the screen each LED looks (a fraction of the screen).
+- **Gamma**: values above 1 deepen dim colors; often looks more natural on WS2812 strips.
+- **Ignore black bars**: samples inside letterboxed video instead of the black bars.
+
+**Advanced**
+
+- **FPS**: updates per second. 30 is plenty; higher uses more CPU and bandwidth.
+- **Monitor #**: which screen to follow. 0 is usually the main one.
+- **Capture**: Automatic uses DXGI on Windows and falls back to GDI.
+- **LEDs per zone**: values above 1 average neighboring LEDs into larger zones.
+- **Max power**: limits R+G+B per LED (0 to 765). See [Safety](#safety).
+- **White balance**: scales red, green and blue if white looks tinted.
+- **Start syncing when the app opens** and **Start AmbiEdge when I sign in to Windows**.
+
+## Safety
+
+- **Photosensitive epilepsy:** fast-changing, flashing light can trigger seizures in people with
+  photosensitive epilepsy, and fast flicker is unpleasant for many others. Games and videos can
+  flash quickly. Raise **Smoothing**, lower **Brightness**, or don't use screen sync if this
+  could affect you or anyone in the room.
+- **Power:** each WS2812-type LED can draw about 60 mA at full white (5 V strips). 60 LEDs at
+  full white is about 3.6 A, far more than a USB port supplies (0.5 to 3 A). The default **Max
+  power** of 255 per LED keeps most USB-powered strips within safe limits. Raise it only if the
+  strip has a separate power supply rated for the current, and keep in mind that brightness can
+  spike suddenly, for example on a white loading screen.
+- **Heat and wiring:** don't cover strips or controllers, don't run a strip from a supply that
+  gets hot, and use wiring rated for the current. Turn the lights off when you're away.
+- **Firmware and hardware:** AmbiEdge only sends color data. It never flashes firmware or
+  changes controller settings. Even so, sending data to the wrong device or with wrong settings
+  is at your own risk.
+
+## Things worth knowing
+
+- **Streaming services can show black.** Netflix, Disney+ and other DRM-protected video in a
+  browser or app is usually blocked from screen capture, so the LEDs stay dark. Turning off
+  hardware acceleration in the browser sometimes helps; it's a limitation of the platform, not
+  this app.
+- **HDR:** with Windows HDR turned on, captured colors can look washed out or dim. Try raising
+  Color boost or Gamma, or turn HDR off while syncing.
+- **Games:** borderless/windowed fullscreen works best. Some games in exclusive fullscreen
+  can't be captured.
+- **The taskbar** sits on the bottom edge when you're not in fullscreen, so bottom LEDs show
+  its color.
+- **Lock screen, UAC prompts and resolution changes** pause capture briefly; AmbiEdge resumes
+  by itself.
+- **Unplugging the controller** is fine: AmbiEdge keeps retrying and reconnects when it's back.
+- **Only one copy runs at a time**, so two copies can't fight over the lights.
+- **Serial speed limits FPS:** 115200 baud carries about 120 LEDs at 30 fps. For longer strips,
+  use a higher baud rate in both the firmware and the app. Many Arduino boards reset when the
+  port opens, so the first frame takes about two seconds.
+- **WLED** goes back to its normal effect two seconds after AmbiEdge stops sending. WLED's own
+  LED count, color order and current limiter still apply, so leave Color order at RGB here.
+- **OpenRGB** switches the device to its direct/custom mode while syncing.
+- **CPU use** is low: frames are downscaled before sampling, and unchanged colors are only resent
+  once a second.
+- Settings are in `%APPDATA%\AmbiEdge\config.json`, with a log in `ambiedge.log` next to it.
+  Delete the config file to reset everything.
+
+### Other platforms
+
+The code avoids Windows-only parts where it can: capture falls back to `mss`, and the drivers
+are cross-platform. On Linux, mss needs an X11 session (Wayland isn't supported), and USB
+devices may need a udev rule for access. Reports from people who try it are welcome.
+
+## Troubleshooting
+
+| Problem | Try |
+|---|---|
+| "No Robobloq controller found" | Check the cable and USB port. Close SyncLight. |
+| "Can't open COM3" | Another app (Arduino IDE serial monitor, Prismatik, the vendor app) has the port open. Close it. |
+| Serial device connects but LEDs stay dark | Wrong baud rate or the firmware doesn't speak Adalight. Check the firmware's settings. |
+| WLED doesn't react | Check the IP address, that the PC and WLED are on the same network, and that the firewall allows outgoing UDP. In WLED, make sure "Receive UDP realtime" is on. |
+| "Can't reach the OpenRGB SDK server" | Start OpenRGB and click **Start Server** on its SDK Server tab. |
+| Wrong colors | Change Color order. |
+| Colors shifted around the screen | Recheck the edge counts, the starting corner and the direction with Test layout. |
+| Wrong screen | Change Monitor #. |
+| LEDs flicker | Raise Smoothing. Check the strip's power supply and data wiring. |
+| Some LEDs stay off at the end | The layout has fewer LEDs than the strip. The status line says how many the device reports, when it can tell. |
+
+If something else goes wrong, open an [issue](https://github.com/KorbSoft/AmbiEdge/issues) with
+your controller model and the contents of `%APPDATA%\AmbiEdge\ambiedge.log` (run with `--debug`
+for more detail).
+
+## Command line
+
+```text
+ambiedge                 open the window
+ambiedge --minimized     open the window minimized
+ambiedge --headless      sync with the saved settings, no window (Ctrl+C stops)
+ambiedge --headless --test-pattern
+ambiedge --list-devices  list detected controllers
+ambiedge --config PATH   use a different settings file
+ambiedge --debug         verbose logging
+```
+
+From source, use `python -m ambiedge` with the same options.
+
+## Privacy
+
+AmbiEdge runs entirely on your PC. Screen images are processed in memory to work out the edge
+colors and are never saved or sent anywhere. There's no telemetry, no account and no internet
+connection. The only network traffic is to a WLED device or OpenRGB server **you** configure.
+
+## Adding a controller
+
+Drivers live in [`ambiedge/drivers/`](ambiedge/drivers). Each one is a small class:
+
+```python
+from .base import DeviceNotFound, Driver
+
+class MyDriver(Driver):
+    key = "mydriver"                  # stored in the config
+    label = "My controller (USB)"     # shown in the UI
+    option_keys = ("my_port",)        # settings it reads; add defaults in config.py
+
+    def open(self):                   # raise DeviceNotFound if it isn't there
+        ...
+    def send(self, colors):           # (n, 3) uint8 array, LED 1 first
+        ...
+    def close(self):
+        ...
+```
+
+Register it in `DRIVERS` in `ambiedge/drivers/__init__.py`, add an `_options_<key>` method in
+`gui.py` for its settings, and add tests for its packet format in `tests/`. Run the tests with:
+
+```bash
+python -m pip install -e ".[dev]"
+python -m pytest
+```
+
+Pull requests are welcome, especially drivers for more controllers and reports of hardware that
+works.
+
+## Disclaimer
+
+AmbiEdge is an independent project. It is **not affiliated with, endorsed by or supported by**
+Robobloq, WLED, OpenRGB, Adafruit or any LED or hardware manufacturer. Product names are
+trademarks of their owners and are used only to describe compatibility. The Robobloq protocol
+was worked out independently, for interoperability with hardware the user owns.
+
+## License
+
+AmbiEdge is free to use, copy, modify and share for **non-commercial purposes**: personal use,
+hobby projects, study, research, and use by charities, schools and public organizations. You may
+not sell it or use it commercially. See [LICENSE](LICENSE)
+([PolyForm Noncommercial 1.0.0](https://polyformproject.org/licenses/noncommercial/1.0.0)) for the
+exact terms.
+
+The software is provided without any warranty, as described in the license. Use it at your own
+risk.
