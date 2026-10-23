@@ -6,7 +6,8 @@ AmbiEdge watches the edges of your screen and lights an LED strip behind your mo
 with matching colors, the "ambilight" effect. It works with several kinds of controllers:
 USB, serial (Arduino / ESP), Wi-Fi (WLED) and anything OpenRGB can drive.
 
-It's **free**, made as a hobby project, and **not for profit**. See [License](#license).
+It's **free and open source** ([GPL-3.0](#license)), made as a hobby project. It was built with
+the help of AI; see [How it was made](#how-it-was-made).
 
 **Features**
 
@@ -43,6 +44,7 @@ It's **free**, made as a hobby project, and **not for profit**. See [License](#l
 - [Command line](#command-line)
 - [Privacy](#privacy)
 - [Adding a controller](#adding-a-controller)
+- [How it was made](#how-it-was-made)
 - [License](#license)
 
 ## What you need
@@ -342,6 +344,17 @@ python -m pytest
 Pull requests are welcome, especially drivers for more controllers and reports of hardware that
 works.
 
+## How it was made
+
+AmbiEdge was made with the help of AI. Most of the code and documentation were written with
+Claude, Anthropic's AI assistant, directed by the project's author. Commits made this way are
+marked with a `Co-Authored-By: Claude` line, so you can see exactly which parts.
+
+It has been tested on real hardware with a Robobloq SyncLight strip on Windows 11. The Adalight,
+WLED and OpenRGB drivers have so far only been tested against simulated devices, so reports from
+people with that hardware (working or not) are especially welcome. Please
+[open an issue](https://github.com/KorbSoft/AmbiEdge/issues/new/choose).
+
 ## Disclaimer
 
 AmbiEdge is an independent project. It is **not affiliated with, endorsed by or supported by**
@@ -351,11 +364,13 @@ was worked out independently, for interoperability with hardware the user owns.
 
 ## License
 
-AmbiEdge is free to use, copy, modify and share for **non-commercial purposes**: personal use,
-hobby projects, study, research, and use by charities, schools and public organizations. You may
-not sell it or use it commercially. See [LICENSE](LICENSE)
-([PolyForm Noncommercial 1.0.0](https://polyformproject.org/licenses/noncommercial/1.0.0)) for the
-exact terms.
+AmbiEdge is free and open-source software, released under the
+[GNU General Public License v3.0 or later](LICENSE). Copyright (C) 2026 KorbSoft.
+
+You can use it for anything, study and change the code, and share it, including your changed
+versions. If you distribute a modified version or something built on AmbiEdge, it has to be
+released under the same license, with its source code. See [LICENSE](LICENSE) for the exact
+terms.
 
 The software is provided without any warranty, as described in the license. Use it at your own
 risk.

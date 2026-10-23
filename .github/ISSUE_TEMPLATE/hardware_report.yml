@@ -1,0 +1,43 @@
+name: Hardware report
+description: Tell us whether AmbiEdge works with your controller (working reports help too)
+labels: [hardware]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Only the Robobloq driver has been tested on real hardware so far, so every report helps,
+        including "it works!". If it doesn't work, a [bug report](https://github.com/KorbSoft/AmbiEdge/issues/new?template=bug_report.yml) with the log is even better.
+  - type: dropdown
+    id: result
+    attributes:
+      label: Does it work?
+      options:
+        - Works fully
+        - Works with problems
+        - Doesn't work
+    validations:
+      required: true
+  - type: dropdown
+    id: controller
+    attributes:
+      label: Controller type used
+      options:
+        - Robobloq SyncLight
+        - Adalight
+        - WLED
+        - OpenRGB
+        - Not supported yet (asking for support)
+    validations:
+      required: true
+  - type: input
+    id: hardware
+    attributes:
+      label: Controller and strip model
+      description: Brand and model, a product link, or board + firmware for DIY builds.
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Details
+      description: Settings that were needed (color order, baud rate...), problems seen, or for an unsupported kit, how it connects (USB / COM port / Bluetooth / Wi-Fi) and how it shows up in Device Manager.

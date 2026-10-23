@@ -1,0 +1,83 @@
+name: Bug report
+description: Something doesn't work or behaves strangely
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting! The details below make it much faster to find the problem.
+        Check [Troubleshooting](https://github.com/KorbSoft/AmbiEdge#troubleshooting) first, it covers the most common issues.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What did you expect, and what happened instead?
+      placeholder: "Example: the top LEDs show the colors from the left side of the screen."
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Pick Adalight on COM3
+        2. Click Start sync
+        3. ...
+  - type: dropdown
+    id: controller
+    attributes:
+      label: Controller type (as picked on the Device tab)
+      options:
+        - Robobloq SyncLight
+        - Adalight
+        - WLED
+        - OpenRGB
+        - None (preview only)
+    validations:
+      required: true
+  - type: input
+    id: hardware
+    attributes:
+      label: Controller and strip model
+      description: Brand and model, or the board and firmware for DIY builds, plus the number of LEDs.
+      placeholder: "Example: Arduino Nano running Adalight at 115200 baud, 90 x WS2812B"
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: AmbiEdge version
+      description: Shown in the window title.
+      placeholder: "1.1.1"
+    validations:
+      required: true
+  - type: dropdown
+    id: install
+    attributes:
+      label: How do you run it?
+      options:
+        - AmbiEdge.exe from Releases
+        - From source (start.bat or python -m ambiedge)
+    validations:
+      required: true
+  - type: input
+    id: os
+    attributes:
+      label: Windows version
+      description: "Run winver to see it. Mention if HDR or several monitors are in use."
+      placeholder: "Windows 11 24H2, HDR off, 2 monitors"
+    validations:
+      required: true
+  - type: textarea
+    id: log
+    attributes:
+      label: Log file
+      description: |
+        Paste the end of `%APPDATA%\AmbiEdge\ambiedge.log` (type that path into File Explorer's address bar).
+        For more detail, start AmbiEdge with `--debug`, reproduce the problem, then copy the log.
+      render: text
+  - type: textarea
+    id: extra
+    attributes:
+      label: Anything else?
+      description: Screenshots, a photo of the strip, or your settings file (`%APPDATA%\AmbiEdge\config.json`).

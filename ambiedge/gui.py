@@ -29,7 +29,7 @@ MENU_PROFILE = 100    # + index into the profile list
 BRIGHTNESS_STEPS = (1.0, 0.75, 0.5, 0.25, 0.1)
 
 FIRST_RUN_NOTICE = (
-    "AmbiEdge is free for non-commercial use and comes with no warranty. Use it at your own risk.\n\n"
+    "AmbiEdge is free, open-source software (GPL-3.0) and comes with no warranty. Use it at your own risk.\n\n"
     "- Fast-changing colors can affect people with photosensitive epilepsy. Raise Smoothing or "
     "lower Brightness if that's a concern.\n"
     "- LED strips can draw a lot of current. Keep Max power at its default for USB-powered strips "
@@ -176,7 +176,7 @@ class App:
 
         foot = ttk.Frame(outer)
         foot.grid(row=4, column=0, sticky="ew", pady=(8, 0))
-        ttk.Label(foot, text="Free for non-commercial use. No warranty: use at your own risk.",
+        ttk.Label(foot, text="Free and open source (GPL-3.0). No warranty: use at your own risk.",
                   foreground="gray").grid(row=0, column=0, sticky="w")
         link = ttk.Label(foot, text="Help", foreground="#0a64c8", cursor="hand2")
         link.grid(row=0, column=1, sticky="e", padx=(12, 0))

@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Troubleshooting guide
+    url: https://github.com/KorbSoft/AmbiEdge#troubleshooting
+    about: Answers to the most common problems.
