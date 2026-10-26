@@ -67,7 +67,7 @@ def test_menu_is_built_from_items_and_reports_clicks(mac):
     assert sub.numberOfItems() == 2
     assert sub.itemAtIndex_(0).state() == NSOnState and not sub.itemAtIndex_(1).isEnabled()
     quit_item = menu.itemAtIndex_(3)
-    assert quit_item.target() is mon._helper and quit_item.action() == b"itemClicked:"
+    assert quit_item.target() is mon._helper and quit_item.action() == "itemClicked:"
     mon._helper.itemClicked_(quit_item)
     assert clicks == [5]
     mon._helper.menuNeedsUpdate_(menu)  # rebuilding replaces the old items
