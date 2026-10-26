@@ -8,7 +8,11 @@ This picks the implementation for the current platform. Every one offers the sam
 - foreground_app(), windowed_apps(): app names used to switch profiles automatically.
 - small_icon_size(): pixel size to render the tray icon at.
 - bring_to_front(): make the app active, so its window shows in front of other apps.
-- screen_capture_allowed(), request_screen_capture(): the macOS Screen Recording permission.
+- set_dock_icon(visible): macOS, show or hide the Dock icon (hidden while only in the menu bar).
+- screen_capture_allowed(), request_screen_capture(), open_screen_capture_settings(): the macOS
+  Screen Recording permission.
+- can_relaunch(), relaunch(): start a fresh copy once this one has quit (macOS only applies a
+  newly granted Screen Recording permission to a new process).
 - TRAY: what the platform calls the place the icon lives, for messages.
 """
 
@@ -17,20 +21,31 @@ import sys
 
 log = logging.getLogger(__name__)
 
-__all__ = ["SystemMonitor", "TRAY", "bring_to_front", "foreground_app", "request_screen_capture",
-           "screen_capture_allowed", "small_icon_size", "supported", "windowed_apps"]
+__all__ = ["SystemMonitor", "TRAY", "bring_to_front", "can_relaunch", "foreground_app",
+           "open_screen_capture_settings", "relaunch", "request_screen_capture",
+           "screen_capture_allowed", "set_dock_icon", "small_icon_size", "supported", "windowed_apps"]
 
 TRAY = "tray"
 
 if sys.platform == "darwin":
     try:
-        from .system_mac import (SystemMonitor, bring_to_front, foreground_app, request_screen_capture,  # noqa: F401
-                                 screen_capture_allowed, small_icon_size, supported, windowed_apps)
+        from . import system_mac as _impl
         TRAY = "menu bar"
     except ImportError as e:  # PyObjC not installed: run without the integration
         log.warning("macOS integration unavailable (%s); install pyobjc-framework-Quartz", e)
-        from .system_win import (SystemMonitor, bring_to_front, foreground_app, request_screen_capture,  # noqa: F401
-                                 screen_capture_allowed, small_icon_size, supported, windowed_apps)
+        from . import system_win as _impl
 else:
-    from .system_win import (SystemMonitor, bring_to_front, foreground_app, request_screen_capture,  # noqa: F401
-                             screen_capture_allowed, small_icon_size, supported, windowed_apps)
+    from . import system_win as _impl
+
+supported = _impl.supported
+SystemMonitor = _impl.SystemMonitor
+foreground_app = _impl.foreground_app
+windowed_apps = _impl.windowed_apps
+small_icon_size = _impl.small_icon_size
+bring_to_front = _impl.bring_to_front
+set_dock_icon = _impl.set_dock_icon
+screen_capture_allowed = _impl.screen_capture_allowed
+request_screen_capture = _impl.request_screen_capture
+open_screen_capture_settings = _impl.open_screen_capture_settings
+can_relaunch = _impl.can_relaunch
+relaunch = _impl.relaunch

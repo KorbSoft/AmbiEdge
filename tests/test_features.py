@@ -197,3 +197,11 @@ def test_missing_screen_permission_pauses_capture(monkeypatch):
     assert eng._grab(None, cfg) == (None, None)
     assert requests == [1]  # asked once, not on every retry
     assert statuses[-1] == engine.CAPTURE_PERMISSION_MESSAGE
+
+
+def test_cli_ignores_finder_process_serial_number(monkeypatch, capsys):
+    import pytest
+    from ambiedge import cli
+    with pytest.raises(SystemExit):
+        cli.main(["-psn_0_12345", "--version"])
+    assert "AmbiEdge" in capsys.readouterr().out

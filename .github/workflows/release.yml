@@ -33,14 +33,9 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: python -m pip install . pyinstaller pillow pytest
+      - run: python -m pip install -e ".[dev]"
       - run: python -m pytest -q
-      - run: python -m ambiedge.icon AmbiEdge.png
-      - run: >
-          pyinstaller --noconfirm --windowed --name AmbiEdge --icon AmbiEdge.png
-          --osx-bundle-identifier com.korbsoft.ambiedge AmbiEdge.pyw
-      # ditto keeps the app bundle's symlinks and signature intact, which a plain zip doesn't.
-      - run: ditto -c -k --keepParent dist/AmbiEdge.app dist/AmbiEdge-macOS.zip
+      - run: scripts/build-macos-app.sh python
       - uses: softprops/action-gh-release@v2
         with:
           files: dist/AmbiEdge-macOS.zip

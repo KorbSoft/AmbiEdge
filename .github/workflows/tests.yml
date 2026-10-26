@@ -25,3 +25,23 @@ jobs:
           python-version: ${{ matrix.python }}
       - run: python -m pip install -e ".[dev]" pytest-github-actions-annotate-failures
       - run: python -m pytest -q
+
+  macos-app:
+    # Builds AmbiEdge.app on every push, so packaging problems show up before a release.
+    # The zip is kept as a run artifact for trying out a branch.
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: scripts/build-macos-app.sh python
+      - name: Start the built app briefly
+        run: |
+          dist/AmbiEdge.app/Contents/MacOS/AmbiEdge --version
+          dist/AmbiEdge.app/Contents/MacOS/AmbiEdge --list-devices
+      - uses: actions/upload-artifact@v4
+        with:
+          name: AmbiEdge-macOS
+          path: dist/AmbiEdge-macOS.zip
+

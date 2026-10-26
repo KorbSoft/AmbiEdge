@@ -111,18 +111,25 @@ file isn't code-signed (signing certificates cost money and this is a free proje
 PyInstaller-built apps by mistake. If you'd rather not run a prebuilt file, use option B: the
 source is all here to read.
 
-**macOS** (Apple Silicon; on an Intel Mac, use option B)
+**macOS** (Apple Silicon; on an Intel Mac, build the app yourself, see below)
 
 1. Download `AmbiEdge-macOS.zip` from the [Releases page](https://github.com/KorbSoft/AmbiEdge/releases),
    double-click it to unzip, and drag **AmbiEdge** into **Applications**.
 2. Open it. Because the app isn't notarized by Apple (that needs a paid developer account), macOS
    will refuse the first time. Go to **System Settings → Privacy & Security**, scroll down and
    click **Open Anyway** next to the message about AmbiEdge, then confirm.
-3. The first time you click **Start sync**, macOS asks for **Screen Recording** permission.
-   Allow it in **System Settings → Privacy & Security → Screen Recording** (called **Screen &
-   System Audio Recording** on macOS 15 and later), then quit AmbiEdge and open it again. macOS
-   only applies the permission after a restart of the app. Each new release is a new app to
-   macOS, so you may have to turn the permission off and on again after updating.
+3. The first time you click **Start sync**, AmbiEdge asks for **Screen Recording** permission.
+   Click **Open System Settings**, turn on **AmbiEdge** under **Screen Recording** (called
+   **Screen & System Audio Recording** on macOS 15 and later), then click **Restart AmbiEdge**.
+   macOS only applies the permission after a restart. Each new build is a new app to macOS, so
+   after updating you may have to remove AmbiEdge from that list (the **−** button) and allow it
+   again.
+
+**Build the Mac app yourself**
+
+From a source checkout set up as in option B, double-click **`build-app.command`** (or run
+`scripts/build-macos-app.sh`). It builds `dist/AmbiEdge.app` and shows it in Finder; drag it to
+**Applications** and open it from there. An app you built yourself isn't blocked by Gatekeeper.
 
 ### Option B: run from source
 
@@ -160,8 +167,9 @@ python3 -m venv .venv
 .venv/bin/python -m ambiedge
 ```
 
-When run from source, macOS asks for Screen Recording permission for the app that started
-Python, usually **Terminal**. Turn it on for that app, then start AmbiEdge again.
+When run from source, macOS gives Screen Recording permission to whatever started Python
+(Terminal, or "Python"), and it doesn't always list it in System Settings. For everyday use,
+build the app (see above): it shows up as **AmbiEdge** and the permission sticks.
 
 `pip install .` also installs `ambiedge` (console) and `ambiedge-gui` (no console) commands.
 
@@ -265,7 +273,7 @@ the icon, click the arrow next to the clock, and drag the icon out to keep it vi
 
 AmbiEdge puts an icon in the menu bar, colorful while the lights are on and gray while they're
 off. **Click** it for the same menu, including **Open AmbiEdge**. Closing the window keeps
-AmbiEdge running there; clicking its Dock icon also brings the window back. **Quit** in the menu,
+AmbiEdge running there and removes it from the Dock; **Open AmbiEdge** brings both back. **Quit** in the menu,
 or Cmd+Q, turns the lights off and exits. If the menu bar is full, the icon can be hidden behind
 the notch on MacBooks: quit a few other menu bar apps, or use a menu bar manager.
 
@@ -361,6 +369,7 @@ your controller model and the contents of `%APPDATA%\AmbiEdge\ambiedge.log` (mac
 ```text
 ambiedge                 open the window
 ambiedge --minimized     start hidden in the tray / menu bar
+ambiedge --start sync    open and start screen sync (or --start mood)
 ambiedge --headless      sync with the saved settings, no window (Ctrl+C stops)
 ambiedge --headless --mood
 ambiedge --headless --test-pattern

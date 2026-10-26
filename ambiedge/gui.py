@@ -45,7 +45,7 @@ FIRST_RUN_NOTICE = (
 
 
 class App:
-    def __init__(self, root, cfg, config_path=None):
+    def __init__(self, root, cfg, config_path=None, start=None):
         self.root = root
         root.title(f"AmbiEdge {__version__}")
         root.resizable(False, False)
@@ -54,6 +54,7 @@ class App:
         self.pw, self.ph, self.pp = self.px(400), self.px(200), self.px(26)
         self.cfg = cfg
         self.config_path = config_path
+        self._start_override = start  # --start: overrides "When AmbiEdge opens" for this run
         self._cfg_lock = threading.Lock()
         self._status_queue = queue.Queue()
         self._tray_events = queue.Queue()
@@ -62,6 +63,7 @@ class App:
         self._preview_items = []
         self._tray_key = None
         self._closed = False
+        self._permission_dialog = None
         self.vars = {}
         self._choice_labels = {}
         self._window_icon = tk.PhotoImage(data=base64.b64encode(icon.png_bytes(icon.render(64))))
@@ -639,6 +641,8 @@ class App:
         else:
             self.profile_info.set("")
         self._update_tray()
+        if self.engine.needs_capture_permission and self._permission_dialog is None:
+            self._show_permission_dialog()
         self.root.after(66, self._poll)
 
     def _refresh_buttons(self):
@@ -754,6 +758,7 @@ class App:
             self._save_soon()
 
     def show_window(self):
+        system.set_dock_icon(True)
         self.root.deiconify()
         self.root.lift()
         system.bring_to_front()
@@ -812,15 +817,16 @@ class App:
         self._start_mode()
 
     def _start_mode(self):
-        if self.cfg["start_mode"] == "sync":
+        mode = self._start_override or self.cfg["start_mode"]
+        if mode == "sync":
             self.toggle_sync()
-        elif self.cfg["start_mode"] == "mood":
+        elif mode == "mood":
             self.toggle_mood()
 
     def on_close(self):
         """Window close button: hide to the tray if there is one, otherwise quit."""
         if self.tray and self.cfg["close_to_tray"]:
-            self.root.withdraw()
+            self.hide_to_tray()
             if not self.cfg["tray_hint_shown"]:
                 if MAC:
                     hint = ("Click its icon in the menu bar to open it, turn the lights on or off, "
@@ -831,6 +837,39 @@ class App:
                 self.monitor.balloon("AmbiEdge is still running", hint)
                 self._set("tray_hint_shown", True)
             return
+        self.quit()
+
+    def hide_to_tray(self):
+        self.root.withdraw()
+        system.set_dock_icon(False)  # macOS: live only in the menu bar until reopened
+
+    def _show_permission_dialog(self):
+        """macOS: explain the Screen Recording permission, once per run."""
+        self.show_window()
+        win = self._permission_dialog = tk.Toplevel(self.root)
+        win.title("Screen Recording permission")
+        win.transient(self.root)
+        win.resizable(False, False)
+        frm = ttk.Frame(win, padding=14)
+        frm.grid()
+        ttk.Label(frm, justify="left", wraplength=self.px(420), text=(
+            "AmbiEdge needs permission to see the screen, or the lights only follow the wallpaper.\n\n"
+            "1. Click Open System Settings.\n"
+            "2. Turn on AmbiEdge in the list (if it isn't there, click + and pick AmbiEdge "
+            "in Applications).\n"
+            "3. Come back and click Restart AmbiEdge. macOS only applies the permission after "
+            "a restart.")).grid(row=0, column=0, columnspan=3, sticky="w")
+        ttk.Button(frm, text="Open System Settings", command=system.open_screen_capture_settings).grid(
+            row=1, column=0, sticky="w", pady=(12, 0))
+        if system.can_relaunch():
+            ttk.Button(frm, text="Restart AmbiEdge", command=self.restart).grid(
+                row=1, column=1, padx=8, pady=(12, 0))
+        ttk.Button(frm, text="Not now", command=win.destroy).grid(row=1, column=2, sticky="e", pady=(12, 0))
+
+    def restart(self):
+        """Quit and start again, carrying on with screen sync or the mood light if it was on."""
+        mode = self.engine.mode if self.engine.mode in ("sync", "mood") else None
+        system.relaunch(["--start", mode] if mode else [])
         self.quit()
 
     def quit(self):
@@ -844,17 +883,17 @@ class App:
         self.root.destroy()
 
 
-def run(cfg, config_path=None, minimized=False):
+def run(cfg, config_path=None, minimized=False, start=None):
     if sys.platform == "win32":
         try:
             ctypes.windll.shcore.SetProcessDpiAwareness(1)  # sharp text on scaled displays
         except (AttributeError, OSError):
             pass
     root = tk.Tk()
-    app = App(root, cfg, config_path)
+    app = App(root, cfg, config_path, start)
     if minimized:
         if app.tray:
-            root.withdraw()
+            app.hide_to_tray()
         else:
             root.iconify()
     root.mainloop()

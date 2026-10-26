@@ -67,9 +67,13 @@ def main(argv=None):
     p.add_argument("--list-devices", action="store_true", help="list detected controllers and exit")
     p.add_argument("--config", metavar="PATH", help="settings file to use instead of the default")
     p.add_argument("--minimized", action="store_true", help="start hidden in the tray or menu bar (or minimized)")
+    p.add_argument("--start", choices=("sync", "mood"), help="turn on screen sync or the mood light when the window opens")
     p.add_argument("--debug", action="store_true", help="verbose logging")
     p.add_argument("--version", action="version", version=f"AmbiEdge {__version__}")
-    args = p.parse_args(argv)
+    if argv is None:
+        argv = sys.argv[1:]
+    # Older macOS passes a process serial number (-psn_0_1234) to apps opened from Finder.
+    args = p.parse_args([a for a in argv if not a.startswith("-psn_")])
 
     _setup_logging(args.debug)
     from .drivers.robobloq import init_hid_on_main_thread
@@ -97,7 +101,7 @@ def main(argv=None):
             _headless(cfg, "test" if args.test_pattern else "mood" if args.mood else "sync")
         else:
             from .gui import run
-            run(cfg, args.config, args.minimized)
+            run(cfg, args.config, args.minimized, args.start)
     except Exception:
         log.exception("AmbiEdge crashed")
         raise

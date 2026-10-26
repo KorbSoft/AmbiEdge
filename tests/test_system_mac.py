@@ -98,3 +98,27 @@ def test_hid_searches_from_short_lived_threads_dont_crash():
         t = threading.Thread(target=lambda: hid.enumerate())
         t.start()
         t.join(10)
+
+
+def test_relaunch_waits_for_this_process_and_keeps_args(mac, monkeypatch):
+    import os
+    calls = []
+    monkeypatch.setattr(mac.subprocess, "Popen", lambda cmd, **kw: calls.append(cmd))
+    monkeypatch.setattr(mac.sys, "argv", ["AmbiEdge.pyw", "--start", "mood", "--debug"])
+    mac.relaunch(["--start", "sync"])
+    cmd = calls[0]
+    assert cmd[:2] == ["/bin/sh", "-c"] and cmd[4] == str(os.getpid())
+    assert cmd[5:] == [mac.sys.executable, "AmbiEdge.pyw", "--debug", "--start", "sync"]
+
+
+def test_bundle_relaunch_uses_open(mac, monkeypatch):
+    calls = []
+    monkeypatch.setattr(mac.subprocess, "Popen", lambda cmd, **kw: calls.append(cmd))
+    monkeypatch.setattr(mac, "app_bundle", lambda: "/Applications/AmbiEdge.app")
+    mac.relaunch([])
+    assert calls[0][5:] == ["open", "-n", "/Applications/AmbiEdge.app", "--args"]
+
+
+def test_dock_icon_can_be_toggled(mac):
+    mac.set_dock_icon(False)
+    mac.set_dock_icon(True)

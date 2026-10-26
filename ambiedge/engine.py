@@ -54,6 +54,7 @@ class SyncEngine:
         self.profile_app = None     # app that selected it, if it was picked automatically
         self._fg_app, self._fg_checked = None, 0.0
         self._asked_capture = False
+        self.needs_capture_permission = False  # macOS Screen Recording is off; the UI explains it
 
     @property
     def running(self):
@@ -287,9 +288,11 @@ class SyncEngine:
                 if not self._asked_capture:
                     self._asked_capture = True
                     system.request_screen_capture()
+                self.needs_capture_permission = True
                 self._status(CAPTURE_PERMISSION_MESSAGE)
                 self._stop.wait(3)
                 return None, None
+            self.needs_capture_permission = False
             try:
                 capture = Capture(cfg["monitor"], cfg["capture"])
             except Exception as e:

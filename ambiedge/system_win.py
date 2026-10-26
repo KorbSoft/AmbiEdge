@@ -461,10 +461,26 @@ def bring_to_front():
     pass  # Tk's focus_force is enough on Windows
 
 
+def set_dock_icon(visible):
+    pass  # macOS only
+
+
 def screen_capture_allowed():
     """Windows doesn't ask for permission to capture the screen."""
     return True
 
 
 def request_screen_capture():
+    pass
+
+
+def open_screen_capture_settings():
+    pass
+
+
+def can_relaunch():
+    return False
+
+
+def relaunch(args=()):
     pass

@@ -13,11 +13,13 @@ event loop runs the Cocoa one, so its menu works while the Tk window's mainloop 
 import logging
 import os
 import subprocess
+import sys
 import threading
 
 import objc
 import Quartz
-from AppKit import (NSApplication, NSImage, NSMenu, NSMenuItem, NSOffState, NSOnState, NSStatusBar,
+from AppKit import (NSApplication, NSApplicationActivationPolicyAccessory,
+                    NSApplicationActivationPolicyRegular, NSImage, NSMenu, NSMenuItem, NSOffState, NSOnState, NSStatusBar,
                     NSVariableStatusItemLength, NSWorkspace, NSWorkspaceDidWakeNotification,
                     NSWorkspaceWillSleepNotification)
 from Foundation import NSData, NSMakeSize, NSObject
@@ -88,7 +90,57 @@ def bring_to_front():
         pass
 
 
+def set_dock_icon(visible):
+    """Show the Dock icon (a normal app) or hide it (menu bar only). Call on the main thread."""
+    policy = NSApplicationActivationPolicyRegular if visible else NSApplicationActivationPolicyAccessory
+    try:
+        NSApplication.sharedApplication().setActivationPolicy_(policy)
+    except Exception:
+        log.debug("couldn't change the Dock icon", exc_info=True)
+
+
 # ---- Screen Recording permission -------------------------------------------
+SCREEN_CAPTURE_SETTINGS_URL = "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture"
+
+
+def open_screen_capture_settings():
+    """Open System Settings at Privacy & Security > Screen Recording."""
+    try:
+        subprocess.Popen(["open", SCREEN_CAPTURE_SETTINGS_URL])
+    except OSError:
+        log.debug("couldn't open System Settings", exc_info=True)
+
+
+def app_bundle():
+    """Path of AmbiEdge.app when running as the built app, else None."""
+    if not getattr(sys, "frozen", False):
+        return None
+    path = os.path.dirname(os.path.abspath(sys.executable))  # .../AmbiEdge.app/Contents/MacOS
+    bundle = os.path.dirname(os.path.dirname(path))
+    return bundle if bundle.endswith(".app") else None
+
+
+def can_relaunch():
+    return True
+
+
+def relaunch(args=()):
+    """Start a new copy with extra command line args once this process has exited (call, then quit)."""
+    bundle = app_bundle()
+    if bundle:
+        start = ["open", "-n", bundle, "--args", *args]
+    else:
+        old = list(sys.argv)
+        if "--start" in old:  # don't pile up --start options over several restarts
+            i = old.index("--start")
+            del old[i:i + 2]
+        start = [sys.executable, *old, *args]
+    # Wait for this process to go first: only one copy can hold the lights.
+    script = 'while kill -0 "$1" 2>/dev/null; do sleep 0.2; done; shift; exec "$@"'
+    subprocess.Popen(["/bin/sh", "-c", script, "sh", str(os.getpid()), *start],
+                     start_new_session=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+
 def screen_capture_allowed():
     """True if macOS lets this app capture other apps' windows (System Settings > Privacy & Security >
     Screen Recording). Without it, captures show only the wallpaper and the menu bar."""
