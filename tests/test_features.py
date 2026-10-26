@@ -158,3 +158,42 @@ def test_icon_files():
     ico = icon.ico_bytes((16, 32))
     assert ico[:6] == b"\x00\x00\x01\x00\x02\x00"
     assert icon.render(24, active=False).shape == (24, 24, 4)
+
+
+def test_launch_agent(tmp_path, monkeypatch):
+    import plistlib
+
+    from ambiedge import autostart
+    agent = autostart.launch_agent()
+    assert agent["RunAtLoad"] and agent["ProgramArguments"][-1] == "--minimized"
+    path = tmp_path / "LaunchAgents" / "com.korbsoft.ambiedge.plist"
+    monkeypatch.setattr(autostart, "launch_agent_path", lambda: str(path))
+    autostart._set_launch_agent(True)
+    with open(path, "rb") as f:
+        assert plistlib.load(f)["Label"] == autostart.LAUNCH_AGENT_LABEL
+    autostart._set_launch_agent(False)
+    autostart._set_launch_agent(False)  # already gone is fine
+    assert not path.exists()
+
+
+def test_mac_app_names_pick_the_movie_profile(monkeypatch):
+    from ambiedge import engine
+    from ambiedge.config import clean
+    cfg = clean({})
+    eng = engine.SyncEngine(lambda: cfg, lambda _: None)
+    monkeypatch.setattr(engine.system, "foreground_app", lambda: "iina")
+    eng.resolve_profile(cfg, 10.0)
+    assert eng.active_profile == "Movie" and eng.profile_app == "iina"
+
+
+def test_missing_screen_permission_pauses_capture(monkeypatch):
+    cfg = clean({})
+    statuses, requests = [], []
+    eng = engine.SyncEngine(lambda: cfg, statuses.append)
+    monkeypatch.setattr(engine.system, "screen_capture_allowed", lambda: False)
+    monkeypatch.setattr(engine.system, "request_screen_capture", lambda: requests.append(1))
+    eng._stop.set()  # don't actually wait between retries
+    assert eng._grab(None, cfg) == (None, None)
+    assert eng._grab(None, cfg) == (None, None)
+    assert requests == [1]  # asked once, not on every retry
+    assert statuses[-1] == engine.CAPTURE_PERMISSION_MESSAGE

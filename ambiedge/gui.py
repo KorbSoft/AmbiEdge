@@ -1,4 +1,4 @@
-"""The settings window and tray icon."""
+"""The settings window and tray / menu bar icon."""
 
 import base64
 import ctypes
@@ -17,6 +17,12 @@ from .layout import EDGES, Layout, fit_counts
 from .processing import COLOR_ORDERS
 
 REPO_URL = "https://github.com/KorbSoft/AmbiEdge"
+
+MAC = sys.platform == "darwin"
+LOGIN_LABEL = "Start AmbiEdge when I log in to this Mac" if MAC else "Start AmbiEdge when I sign in to Windows"
+STARTED_AT_LOGIN = "When started at login" if MAC else "When started with Windows"
+APP_EXAMPLE = "iina or vlc" if MAC else "vlc.exe"
+MULTI_SELECT_KEY = "Cmd" if MAC else "Ctrl"
 
 LAYOUT_KEYS = ("left", "top", "right", "bottom", "bottom_gap", "start_corner", "clockwise", "shift")
 
@@ -64,11 +70,16 @@ class App:
         self.monitor = None
         if system.supported:
             self.monitor = system.SystemMonitor(on_tray=self._tray_events.put, menu_items=self.tray_menu).start()
-        self.tray = self.monitor is not None and self.monitor._hwnd is not None
+        self.tray = self.monitor is not None and self.monitor.has_tray
         self.engine = SyncEngine(self.get_config, self._status_queue.put, self.monitor)
         self._build()
         self._poll()
         root.protocol("WM_DELETE_WINDOW", self.on_close)
+        if MAC:
+            # Clicking the Dock icon while the window is hidden brings it back, and Cmd+Q (or
+            # Quit in the Dock menu) quits properly, turning the lights off first.
+            root.createcommand("::tk::mac::ReopenApplication", self.show_window)
+            root.createcommand("::tk::mac::Quit", self.quit)
         if not cfg["notice_shown"]:
             root.after(200, self._first_run)
         else:
@@ -248,7 +259,8 @@ class App:
 
     def _options_adalight(self, f):
         ttk.Label(f, text="Port").grid(row=0, column=0, sticky="e", padx=(0, 4))
-        port = ttk.Combobox(f, width=12, textvariable=self._bind("serial_port", tk.StringVar()))
+        # macOS port names are long, like /dev/cu.usbserial-1420.
+        port = ttk.Combobox(f, width=26 if MAC else 12, textvariable=self._bind("serial_port", tk.StringVar()))
         port.grid(row=0, column=1, sticky="w")
 
         def refresh():
@@ -369,7 +381,7 @@ class App:
         self.profile_info = tk.StringVar()
         ttk.Label(f, textvariable=self.profile_info).grid(row=4, column=0, columnspan=3, sticky="w", pady=(8, 0))
         self._note(f, "Each profile has its own Look settings (pick a profile on the Look tab to edit it). "
-                      "Apps are program file names such as vlc.exe, separated by commas; Choose lists the "
+                      f"Apps are program names such as {APP_EXAMPLE}, separated by commas; Choose lists the "
                       "programs that have a window open. When no listed app is in front, the selected "
                       "profile is used.", 5, 3)
 
@@ -437,7 +449,7 @@ class App:
         frm = ttk.Frame(win, padding=10)
         frm.grid()
         ttk.Label(frm, text=f"Programs with a window open. Select the ones that should use "
-                            f"the {self.cfg['profile']} profile (Ctrl+click to pick several).",
+                            f"the {self.cfg['profile']} profile ({MULTI_SELECT_KEY}+click to pick several).",
                   wraplength=self.px(360), justify="left").grid(row=0, column=0, columnspan=2, sticky="w")
         lb = tk.Listbox(frm, width=40, height=12, selectmode="extended")
         lb.grid(row=1, column=0, columnspan=2, pady=8)
@@ -505,14 +517,14 @@ class App:
         ttk.Combobox(f, textvariable=var, values=labels, state="readonly", width=20).grid(
             row=3, column=1, sticky="w", padx=(6, 0), pady=(12, 0))
         self._login_var = tk.BooleanVar(value=autostart.is_enabled())
-        ttk.Checkbutton(f, text="Start AmbiEdge when I sign in to Windows", variable=self._login_var,
+        ttk.Checkbutton(f, text=LOGIN_LABEL, variable=self._login_var,
                         command=self._toggle_login, state="normal" if autostart.supported else "disabled").grid(
             row=4, column=0, columnspan=4, sticky="w", pady=(8, 0))
         if self.tray:
-            self._check(f, "close_to_tray", 5, "Closing the window keeps AmbiEdge running in the tray")
+            self._check(f, "close_to_tray", 5, f"Closing the window keeps AmbiEdge running in the {system.TRAY}")
         self._note(f, "Times are 24-hour (type any time, like 22:45). If the off time is earlier than the "
-                      "on time, the lights stay on past midnight. When started with Windows, AmbiEdge "
-                      "opens in the tray.", 6)
+                      f"on time, the lights stay on past midnight. {STARTED_AT_LOGIN}, AmbiEdge "
+                      f"opens in the {system.TRAY}.", 6)
 
     def _toggle_login(self):
         try:
@@ -526,7 +538,11 @@ class App:
         self._spin(f, "fps", 0, 0, "FPS", width=4)
         self._spin(f, "monitor", 0, 2, "Monitor #", width=4)
         ttk.Label(f, text="Capture").grid(row=1, column=0, sticky="e", padx=(0, 4), pady=2)
-        var, labels = self._bind_choice("capture", [("auto", "Automatic"), ("dxcam", "DXGI (Windows)"), ("mss", "GDI / mss")])
+        if sys.platform == "win32":
+            methods = [("auto", "Automatic"), ("dxcam", "DXGI (Windows)"), ("mss", "GDI / mss")]
+        else:
+            methods = [("auto", "Automatic"), ("mss", "mss")]
+        var, labels = self._bind_choice("capture", methods)
         ttk.Combobox(f, textvariable=var, values=labels, state="readonly", width=14).grid(row=1, column=1, sticky="w")
         self._spin(f, "group", 1, 2, "LEDs per zone", width=4)
         self._spin(f, "max_power", 2, 0, "Max power", width=5, increment=5)
@@ -740,6 +756,7 @@ class App:
     def show_window(self):
         self.root.deiconify()
         self.root.lift()
+        system.bring_to_front()
         self.root.focus_force()
 
     # ---- dialogs, startup and shutdown ---------------------------------------
@@ -805,9 +822,13 @@ class App:
         if self.tray and self.cfg["close_to_tray"]:
             self.root.withdraw()
             if not self.cfg["tray_hint_shown"]:
-                self.monitor.balloon("AmbiEdge is still running",
-                                     "Click the tray icon to open it. Right-click it to turn the lights "
-                                     "on or off, change brightness, or quit.")
+                if MAC:
+                    hint = ("Click its icon in the menu bar to open it, turn the lights on or off, "
+                            "change brightness, or quit.")
+                else:
+                    hint = ("Click the tray icon to open it. Right-click it to turn the lights "
+                            "on or off, change brightness, or quit.")
+                self.monitor.balloon("AmbiEdge is still running", hint)
                 self._set("tray_hint_shown", True)
             return
         self.quit()

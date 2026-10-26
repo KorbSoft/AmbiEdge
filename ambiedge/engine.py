@@ -21,6 +21,10 @@ RESEND_INTERVAL = 1.0
 FADE_SECONDS = 1.0
 MOOD_FPS = 25
 PROFILE_CHECK_INTERVAL = 1.0
+CAPTURE_PERMISSION_MESSAGE = (
+    "AmbiEdge needs permission to see the screen. Turn it on in System Settings > Privacy & Security > "
+    "Screen Recording (called Screen & System Audio Recording on macOS 15 and later), then quit "
+    "AmbiEdge and open it again.")
 
 
 class _Reconnect(Exception):
@@ -49,6 +53,7 @@ class SyncEngine:
         self.active_profile = None  # profile in use while syncing
         self.profile_app = None     # app that selected it, if it was picked automatically
         self._fg_app, self._fg_checked = None, 0.0
+        self._asked_capture = False
 
     @property
     def running(self):
@@ -277,6 +282,14 @@ class SyncEngine:
             capture.close()
             capture = None
         if capture is None:
+            if not system.screen_capture_allowed():
+                # macOS: without Screen Recording permission, captures show only the wallpaper.
+                if not self._asked_capture:
+                    self._asked_capture = True
+                    system.request_screen_capture()
+                self._status(CAPTURE_PERMISSION_MESSAGE)
+                self._stop.wait(3)
+                return None, None
             try:
                 capture = Capture(cfg["monitor"], cfg["capture"])
             except Exception as e:

@@ -81,7 +81,9 @@ DEFAULT_PROFILES = {
     "Movie": {"brightness": 1.0, "saturation": 1.3, "smoothing": 0.75, "depth": 0.1, "gamma": 1.0,
               "vivid": 0.7, "skip_black_bars": True,
               "apps": ["vlc.exe", "mpc-hc64.exe", "mpc-be64.exe", "potplayermini64.exe", "mpv.exe",
-                       "kodi.exe", "plex.exe", "plexamp.exe", "stremio.exe"]},
+                       "kodi.exe", "plex.exe", "plexamp.exe", "stremio.exe",
+                       # macOS app names
+                       "vlc", "iina", "quicktime player", "infuse", "mpv", "kodi", "plex", "stremio", "tv"]},
     "Game": {"brightness": 1.0, "saturation": 1.25, "smoothing": 0.3, "depth": 0.12, "gamma": 1.0,
              "vivid": 0.6, "skip_black_bars": False, "apps": []},
 }
@@ -136,6 +138,8 @@ PATTERNS = {
 def config_dir():
     if sys.platform == "win32":
         return os.path.join(os.environ.get("APPDATA") or os.path.expanduser("~"), APP_NAME)
+    if sys.platform == "darwin":
+        return os.path.expanduser(f"~/Library/Application Support/{APP_NAME}")
     base = os.environ.get("XDG_CONFIG_HOME") or os.path.expanduser("~/.config")
     return os.path.join(base, "ambiedge")
 

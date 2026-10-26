@@ -71,6 +71,9 @@ def ico_bytes(sizes=(16, 24, 32, 48, 64, 128, 256)):
 
 
 if __name__ == "__main__":
+    # python -m ambiedge.icon AmbiEdge.ico for Windows, or AmbiEdge.png (1024 px, which PyInstaller
+    # turns into the .icns of the macOS app when Pillow is installed).
     import sys
-    with open(sys.argv[1] if len(sys.argv) > 1 else "AmbiEdge.ico", "wb") as f:
-        f.write(ico_bytes())
+    path = sys.argv[1] if len(sys.argv) > 1 else "AmbiEdge.ico"
+    with open(path, "wb") as f:
+        f.write(png_bytes(render(1024)) if path.lower().endswith(".png") else ico_bytes())

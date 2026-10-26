@@ -9,8 +9,14 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [windows-latest, ubuntu-latest]
+        os: [windows-latest, macos-latest, ubuntu-latest]
         python: ["3.9", "3.12"]
+        exclude:
+          - os: macos-latest  # Apple Silicon runners have no Python 3.9 builds
+            python: "3.9"
+        include:
+          - os: macos-latest
+            python: "3.10"
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4

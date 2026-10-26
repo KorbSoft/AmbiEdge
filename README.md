@@ -17,7 +17,8 @@ the help of AI; see [How it was made](#how-it-was-made).
 - **Mood light**: a plain color, slow breathing, color cycle or rainbow when you're not syncing.
 - Lights **fade out when the display sleeps, the PC locks or goes to sleep**, and come back by
   themselves. An optional **daily schedule** keeps them off outside the hours you choose.
-- A **tray icon** with on/off, mood light, brightness and profile controls.
+- A **tray icon** (Windows) or **menu bar icon** (macOS) with on/off, mood light, brightness and
+  profile controls.
 - A live preview of the layout, a test pattern for checking it, and **Fit to LED count** to split
   a strip over the screen edges automatically.
 
@@ -49,8 +50,8 @@ the help of AI; see [How it was made](#how-it-was-made).
 
 ## What you need
 
-- A PC running **Windows 10 or 11**. Linux and macOS may work but aren't tested (see
-  [Other platforms](#other-platforms)).
+- A PC running **Windows 10 or 11**, or a Mac running **macOS 11 (Big Sur) or newer**. Linux may
+  work but isn't tested (see [Other platforms](#other-platforms)).
 - An **addressable** LED strip (WS2812B, SK6812, WS2815 and similar, where each LED can show
   its own color) with a **controller the PC can talk to**: plugged into the PC over USB, or on
   your network running WLED, or connected to a motherboard ARGB header that OpenRGB supports.
@@ -74,7 +75,9 @@ direction, and skip a gap for a monitor stand, so most physical setups can be de
 
 - Its controller box plugs into the PC with a USB cable *and* the strip's own software does
   screen sync. Look in **Device Manager**: if the controller appears under **Ports (COM & LPT)**
-  (often as "USB-SERIAL CH340", "CP210x" or "Arduino"), try the **Adalight** driver. If it's a
+  (often as "USB-SERIAL CH340", "CP210x" or "Arduino"), try the **Adalight** driver. On a Mac,
+  a serial controller shows up as a port like `/dev/cu.usbserial-1420` or `/dev/cu.usbmodem…`
+  (run `ls /dev/cu.*` in Terminal before and after plugging it in). If it's a
   Robobloq kit, use the **Robobloq** driver. **Find devices** in the app lists what it can see.
 - It's an ESP-based controller that runs (or can be flashed with) **WLED**.
 - It's plugged into a motherboard **ARGB header** that OpenRGB can control.
@@ -97,6 +100,8 @@ the controller talks to the PC, and it may be Adalight-compatible.
 
 ### Option A: download the app (easiest)
 
+**Windows**
+
 1. Download `AmbiEdge.exe` from the [Releases page](https://github.com/KorbSoft/AmbiEdge/releases).
 2. Double-click it. No installation needed.
 
@@ -106,7 +111,22 @@ file isn't code-signed (signing certificates cost money and this is a free proje
 PyInstaller-built apps by mistake. If you'd rather not run a prebuilt file, use option B: the
 source is all here to read.
 
+**macOS** (Apple Silicon; on an Intel Mac, use option B)
+
+1. Download `AmbiEdge-macOS.zip` from the [Releases page](https://github.com/KorbSoft/AmbiEdge/releases),
+   double-click it to unzip, and drag **AmbiEdge** into **Applications**.
+2. Open it. Because the app isn't notarized by Apple (that needs a paid developer account), macOS
+   will refuse the first time. Go to **System Settings → Privacy & Security**, scroll down and
+   click **Open Anyway** next to the message about AmbiEdge, then confirm.
+3. The first time you click **Start sync**, macOS asks for **Screen Recording** permission.
+   Allow it in **System Settings → Privacy & Security → Screen Recording** (called **Screen &
+   System Audio Recording** on macOS 15 and later), then quit AmbiEdge and open it again. macOS
+   only applies the permission after a restart of the app. Each new release is a new app to
+   macOS, so you may have to turn the permission off and on again after updating.
+
 ### Option B: run from source
+
+**Windows**
 
 1. Install **Python 3.9 or newer** from [python.org](https://www.python.org/downloads/). Tick
    **Add python.exe to PATH** during setup.
@@ -122,6 +142,27 @@ python -m venv .venv
 .venv\Scripts\python -m ambiedge
 ```
 
+**macOS**
+
+1. Install **Python 3.9 or newer** from [python.org](https://www.python.org/downloads/macos/). Its
+   installer includes Tk, which the window needs. (With Homebrew Python, also run
+   `brew install python-tk`.)
+2. Download this repository (**Code → Download ZIP**) or `git clone` it.
+3. Double-click **`setup.command`** once. The first time, macOS may block it: right-click it,
+   choose **Open**, and confirm (or allow it under **System Settings → Privacy & Security**).
+4. Double-click **`start.command`** to run AmbiEdge.
+
+Or by hand:
+
+```bash
+python3 -m venv .venv
+.venv/bin/python -m pip install -r requirements.txt
+.venv/bin/python -m ambiedge
+```
+
+When run from source, macOS asks for Screen Recording permission for the app that started
+Python, usually **Terminal**. Turn it on for that app, then start AmbiEdge again.
+
 `pip install .` also installs `ambiedge` (console) and `ambiedge-gui` (no console) commands.
 
 ## First-time setup
@@ -129,7 +170,7 @@ python -m venv .venv
 1. **Close your strip's own app** (SyncLight, Prismatik, the vendor's sync tool and so on), or
    the two will fight over the lights.
 2. **Device tab:** pick your controller, or click **Find devices...** and choose from the list.
-   - Adalight: choose the COM port and the baud rate your firmware uses.
+   - Adalight: choose the COM port (on a Mac, the `/dev/cu.…` port) and the baud rate your firmware uses.
    - WLED: enter the device's IP address (shown in the WLED app).
    - OpenRGB: start OpenRGB, open its **SDK Server** tab, click **Start Server**, then pick the device number.
 3. **Layout tab:** enter how many LEDs are on each edge, as seen from the **front** of the
@@ -174,8 +215,8 @@ last LED numbered. Settings save automatically.
 
 - Each profile has its own Look settings. AmbiEdge comes with **Desktop**, **Movie** (smoother,
   with common video players already listed) and **Game** (faster).
-- **Use this profile while these apps are in front**: program file names such as `vlc.exe`,
-  separated by commas. **Choose...** lists the programs that have a window open.
+- **Use this profile while these apps are in front**: program file names such as `vlc.exe`
+  on Windows, or app names such as `iina` or `quicktime player` on macOS, separated by commas. **Choose...** lists the programs that have a window open.
 - **Switch profiles automatically by the app in front**: when none of the listed apps is in
   front, the profile selected on the Look tab is used.
 
@@ -187,23 +228,28 @@ last LED numbered. Settings save automatically.
 **Schedule**
 
 - **Turn the lights off while the display sleeps, the PC is locked or the PC is asleep**: the
-  lights fade out and come back when you return. On by default. (Windows only.)
+  lights fade out and come back when you return. On by default. (Windows and macOS.)
 - **Only turn the lights on between ... and ...**: a daily schedule, 24-hour times. An off time
   earlier than the on time spans midnight (for example 18:00 to 01:00).
 - **When AmbiEdge opens**: do nothing, start screen sync, or turn on the mood light.
-- **Start AmbiEdge when I sign in to Windows**: it starts hidden in the tray.
-- **Closing the window keeps AmbiEdge running in the tray**: on by default.
+- **Start AmbiEdge when I sign in to Windows** / **when I log in to this Mac**: it starts hidden in
+  the tray or menu bar. On macOS this adds a login item (a LaunchAgent in
+  `~/Library/LaunchAgents`), which macOS lists under **System Settings → General → Login Items**.
+- **Closing the window keeps AmbiEdge running in the tray** (or menu bar): on by default.
 
 **Advanced**
 
 - **FPS**: updates per second. 30 is plenty; higher uses more CPU and bandwidth.
 - **Monitor #**: which screen to follow. 0 is usually the main one.
-- **Capture**: Automatic uses DXGI on Windows and falls back to GDI.
+- **Capture**: Automatic uses DXGI on Windows and falls back to GDI. macOS always uses mss
+  (CoreGraphics).
 - **LEDs per zone**: values above 1 average neighboring LEDs into larger zones.
 - **Max power**: limits R+G+B per LED (0 to 765). See [Safety](#safety).
 - **White balance**: scales red, green and blue if white looks tinted.
 
 ## Tray icon
+
+**Windows**
 
 On Windows, AmbiEdge puts an icon in the notification area (next to the clock). It's colorful
 while the lights are on and gray while they're off or paused. Hover it to see what it's doing.
@@ -214,6 +260,14 @@ while the lights are on and gray while they're off or paused. Hover it to see wh
 
 Closing the window hides it to the tray; use **Quit** in the tray menu to exit. If you can't see
 the icon, click the arrow next to the clock, and drag the icon out to keep it visible.
+
+**macOS**
+
+AmbiEdge puts an icon in the menu bar, colorful while the lights are on and gray while they're
+off. **Click** it for the same menu, including **Open AmbiEdge**. Closing the window keeps
+AmbiEdge running there; clicking its Dock icon also brings the window back. **Quit** in the menu,
+or Cmd+Q, turns the lights off and exits. If the menu bar is full, the icon can be hidden behind
+the notch on MacBooks: quit a few other menu bar apps, or use a menu bar manager.
 
 ## Safety
 
@@ -238,12 +292,13 @@ the icon, click the arrow next to the clock, and drag the icon out to keep it vi
   browser or app is usually blocked from screen capture, so the LEDs stay dark. Turning off
   hardware acceleration in the browser sometimes helps; it's a limitation of the platform, not
   this app.
-- **HDR:** with Windows HDR turned on, captured colors can look washed out or dim. Try raising
+- **HDR:** with Windows HDR turned on (or on an HDR / XDR Mac display showing HDR video),
+  captured colors can look washed out or dim. Try raising
   Color boost or Gamma, or turn HDR off while syncing.
 - **Games:** borderless/windowed fullscreen works best. Some games in exclusive fullscreen
   can't be captured.
 - **The taskbar** sits on the bottom edge when you're not in fullscreen, so bottom LEDs show
-  its color.
+  its color. On a Mac the menu bar (top) and the Dock do the same.
 - **Lock screen, display sleep and PC sleep** turn the lights off (fading over a second) and
   back on when you return, unless you untick that option on the Schedule tab. UAC prompts and
   resolution changes pause capture briefly; AmbiEdge resumes by itself.
@@ -259,16 +314,22 @@ the icon, click the arrow next to the clock, and drag the icon out to keep it vi
 - **OpenRGB** switches the device to its direct/custom mode while syncing.
 - **CPU use** is low: frames are downscaled before sampling, and unchanged colors are only resent
   once a second.
-- Settings are in `%APPDATA%\AmbiEdge\config.json`, with a log in `ambiedge.log` next to it.
-  Delete the config file to reset everything.
+- Settings are in `%APPDATA%\AmbiEdge\config.json` on Windows and
+  `~/Library/Application Support/AmbiEdge/config.json` on macOS, with a log in `ambiedge.log`
+  next to it. Delete the config file to reset everything.
+- **macOS specifics:** capture needs the Screen Recording permission (see [Install](#install)).
+  macOS 15 and later may ask you every so often to confirm that AmbiEdge can keep recording the
+  screen; that's macOS, not AmbiEdge. Sleep is detected only while the window app is running
+  (not with `--headless`); display sleep and the lock screen are detected in both. Retina screens
+  are captured at full resolution, so CPU use is a bit higher than on Windows; lower **FPS** if
+  it matters.
 
 ### Other platforms
 
-The code avoids Windows-only parts where it can: capture falls back to `mss`, and the drivers
-are cross-platform. On Linux, mss needs an X11 session (Wayland isn't supported), and USB
-devices may need a udev rule for access. The tray icon, automatic profile switching and
-turning off with the display are Windows-only for now; the schedule works everywhere. Reports
-from people who try it are welcome.
+Windows and macOS have full support. On Linux, capture uses `mss`, which needs an X11 session
+(Wayland isn't supported), and USB devices may need a udev rule for access. The tray icon,
+automatic profile switching and turning off with the display aren't available on Linux yet; the
+schedule works everywhere. Reports from people who try it are welcome.
 
 ## Troubleshooting
 
@@ -287,16 +348,19 @@ from people who try it are welcome.
 | Lights turn off by themselves | The display went to sleep, the PC locked, or it's outside the schedule. The status line says which. Change it on the Schedule tab. |
 | Wrong profile is used | Check the Profiles tab: "In use now" shows which profile is active and why. |
 | No tray icon | Click the arrow next to the clock. Windows may hide new icons there. |
+| Mac: LEDs only follow the wallpaper, or "AmbiEdge needs permission to see the screen" | Turn on Screen Recording for AmbiEdge (or for Terminal, when run from source) in System Settings → Privacy & Security, then quit and reopen AmbiEdge. |
+| Mac: "AmbiEdge can't be opened" / "Apple could not verify…" | System Settings → Privacy & Security → **Open Anyway**. See [Install](#install). |
+| Mac: no serial port listed | Use the `/dev/cu.…` port, not `/dev/tty.…`. Some CH340 boards on older macOS need the maker's driver. |
 
 If something else goes wrong, open an [issue](https://github.com/KorbSoft/AmbiEdge/issues) with
-your controller model and the contents of `%APPDATA%\AmbiEdge\ambiedge.log` (run with `--debug`
-for more detail).
+your controller model and the contents of `%APPDATA%\AmbiEdge\ambiedge.log` (macOS:
+`~/Library/Application Support/AmbiEdge/ambiedge.log`; run with `--debug` for more detail).
 
 ## Command line
 
 ```text
 ambiedge                 open the window
-ambiedge --minimized     start hidden in the tray
+ambiedge --minimized     start hidden in the tray / menu bar
 ambiedge --headless      sync with the saved settings, no window (Ctrl+C stops)
 ambiedge --headless --mood
 ambiedge --headless --test-pattern

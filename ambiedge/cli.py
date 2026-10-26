@@ -66,7 +66,7 @@ def main(argv=None):
     p.add_argument("--test-pattern", action="store_true", help="with --headless, show the layout test pattern instead")
     p.add_argument("--list-devices", action="store_true", help="list detected controllers and exit")
     p.add_argument("--config", metavar="PATH", help="settings file to use instead of the default")
-    p.add_argument("--minimized", action="store_true", help="start hidden in the tray (or minimized)")
+    p.add_argument("--minimized", action="store_true", help="start hidden in the tray or menu bar (or minimized)")
     p.add_argument("--debug", action="store_true", help="verbose logging")
     p.add_argument("--version", action="version", version=f"AmbiEdge {__version__}")
     args = p.parse_args(argv)

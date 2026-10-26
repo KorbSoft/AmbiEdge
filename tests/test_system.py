@@ -4,7 +4,7 @@ import sys
 
 import pytest
 
-from ambiedge import system
+from ambiedge import system_win as system
 
 pytestmark = pytest.mark.skipif(sys.platform != "win32", reason="Windows only")
 
