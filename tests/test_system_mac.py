@@ -86,3 +86,15 @@ def test_monitor_starts_off_the_main_thread_without_icon(mac):
     t.start()
     t.join(10)
     assert result == {"tray": False}
+
+
+def test_hid_searches_from_short_lived_threads_dont_crash():
+    # Without initializing hidapi on the main thread first, the second search here crashed the
+    # process: hidapi had attached itself to the first thread's run loop, freed when it exited.
+    hid = pytest.importorskip("hid")
+    from ambiedge.drivers.robobloq import init_hid_on_main_thread
+    init_hid_on_main_thread()
+    for _ in range(3):
+        t = threading.Thread(target=lambda: hid.enumerate())
+        t.start()
+        t.join(10)

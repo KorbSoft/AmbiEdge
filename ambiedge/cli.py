@@ -72,6 +72,8 @@ def main(argv=None):
     args = p.parse_args(argv)
 
     _setup_logging(args.debug)
+    from .drivers.robobloq import init_hid_on_main_thread
+    init_hid_on_main_thread()  # before any background thread looks for USB devices
     log = logging.getLogger("ambiedge")
     log.info("AmbiEdge %s starting", __version__)
 

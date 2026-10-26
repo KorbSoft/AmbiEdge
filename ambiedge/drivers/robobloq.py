@@ -35,6 +35,23 @@ def _hid():
     return hid
 
 
+def init_hid_on_main_thread():
+    """Call once from the main thread at startup (macOS only, harmless elsewhere).
+
+    On macOS, hidapi attaches its device manager to the run loop of the thread that first uses
+    it. Device searches run on short-lived background threads; once the first of them exits, its
+    run loop is freed and the next search crashes the process inside IOKit. Doing the first call
+    on the main thread, which lives as long as the app, avoids that.
+    """
+    if sys.platform != "darwin":
+        return
+    try:
+        import hid
+        hid.enumerate(0xFFFF, 0xFFFF)  # no such device; just initializes hidapi
+    except Exception:
+        pass
+
+
 def _find_paths(hid):
     return [d["path"] for d in hid.enumerate(VID, PID) if d["usage_page"] == VENDOR_USAGE_PAGE]
 
